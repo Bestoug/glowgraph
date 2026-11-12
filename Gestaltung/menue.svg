@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
+  <!-- Menüleiste (Vorlage, macOS färbt selbst): Sechseck-Laterne mit Licht und vier Notizen -->
+  <g fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round">
+    <polygon points="18,8 26.7,13 26.7,23 18,28 9.3,23 9.3,13"/>
+  </g>
+  <circle cx="18" cy="18" r="3.6" fill="#000"/>
+  <circle cx="4.5" cy="6" r="2.2" fill="#000"/><circle cx="31.5" cy="6" r="2.2" fill="#000"/>
+  <circle cx="4.5" cy="30" r="2.2" fill="#000"/><circle cx="31.5" cy="30" r="2.2" fill="#000"/>
+</svg>

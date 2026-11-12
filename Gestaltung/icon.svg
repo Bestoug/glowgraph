@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <radialGradient id="grund" cx="50%" cy="46%" r="70%">
+      <stop offset="0" stop-color="#2a1c10"/><stop offset=".6" stop-color="#120c08"/><stop offset="1" stop-color="#050302"/>
+    </radialGradient>
+    <radialGradient id="licht" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff1d6" stop-opacity="1"/><stop offset=".14" stop-color="#ffd08a" stop-opacity=".75"/>
+      <stop offset=".4" stop-color="#ff9a3c" stop-opacity=".22"/><stop offset="1" stop-color="#ff9a3c" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="punkt" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff6e6"/><stop offset=".3" stop-color="#f0d6aa" stop-opacity=".6"/><stop offset="1" stop-color="#f0d6aa" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="petrol" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#e6fff8"/><stop offset=".3" stop-color="#6ee6cd" stop-opacity=".65"/><stop offset="1" stop-color="#6ee6cd" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="form"><rect x="100" y="100" width="824" height="824" rx="185"/></clipPath>
+  </defs>
+  <g clip-path="url(#form)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#grund)"/>
+    <!-- Rauch -->
+    <ellipse cx="420" cy="690" rx="330" ry="90" fill="#ffdcb4" opacity=".05"/>
+    <ellipse cx="640" cy="330" rx="300" ry="70" fill="#ffdcb4" opacity=".04"/>
+    <!-- Art-Deco-Rahmen -->
+    <rect x="148" y="148" width="728" height="728" rx="150" fill="none" stroke="#be804a" stroke-opacity=".55" stroke-width="5"/>
+    <rect x="166" y="166" width="692" height="692" rx="134" fill="none" stroke="#be804a" stroke-opacity=".25" stroke-width="2"/>
+    <!-- Netz: Bögen wie in der Laterne -->
+    <g fill="none" stroke="#be804a" stroke-opacity=".55" stroke-width="3.2" stroke-linecap="round">
+      <path d="M512 512 Q 400 400 300 360"/><path d="M512 512 Q 640 400 730 360"/>
+      <path d="M512 512 Q 430 640 330 690"/><path d="M512 512 Q 600 650 700 690"/>
+      <path d="M300 360 Q 300 520 330 690"/><path d="M730 360 Q 730 520 700 690"/>
+      <path d="M300 360 Q 512 250 730 360"/><path d="M330 690 Q 512 790 700 690"/>
+    </g>
+    <!-- Laterne: Sechseck um das Licht -->
+    <circle cx="512" cy="512" r="300" fill="url(#licht)"/>
+    <polygon points="512,402 607,457 607,567 512,622 417,567 417,457" fill="none" stroke="#f5d39a" stroke-opacity=".85" stroke-width="5"/>
+    <polygon points="512,432 581,472 581,552 512,592 443,552 443,472" fill="none" stroke="#f5d39a" stroke-opacity=".35" stroke-width="2.5"/>
+    <circle cx="512" cy="512" r="30" fill="#fff6e6"/>
+    <!-- Notizen -->
+    <circle cx="300" cy="360" r="70" fill="url(#punkt)"/><circle cx="300" cy="360" r="12" fill="#fff6e6"/>
+    <circle cx="730" cy="360" r="70" fill="url(#punkt)"/><circle cx="730" cy="360" r="12" fill="#fff6e6"/>
+    <circle cx="330" cy="690" r="64" fill="url(#petrol)"/><circle cx="330" cy="690" r="11" fill="#e6fff8"/>
+    <circle cx="700" cy="690" r="64" fill="url(#petrol)"/><circle cx="700" cy="690" r="11" fill="#e6fff8"/>
+    <circle cx="512" cy="262" r="46" fill="url(#punkt)"/><circle cx="512" cy="262" r="8" fill="#fff6e6"/>
+    <circle cx="512" cy="776" r="46" fill="url(#punkt)"/><circle cx="512" cy="776" r="8" fill="#fff6e6"/>
+  </g>
+</svg>

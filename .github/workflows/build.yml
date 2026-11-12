@@ -1,0 +1,30 @@
+# Builds Glowgraph and checks the vault reader against an invented example vault.
+# Runs on GitHub's macOS runners only (never on a self-hosted machine). Read-only permissions.
+name: Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build app
+        run: ./bauen.sh build
+      - name: Check vault reader
+        run: |
+          xcrun swiftc -O -sdk "$(xcrun --sdk macosx --show-sdk-path)" Quellen/Kern/*.swift Werkzeuge/vaultpruefung/main.swift -o vaultpruefung
+          ./vaultpruefung
+      - name: Package
+        run: cd build && ditto -c -k --keepParent Glowgraph.app Glowgraph.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Glowgraph
+          path: build/Glowgraph.zip
