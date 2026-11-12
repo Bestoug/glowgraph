@@ -104,10 +104,11 @@ CPU is the share of one core, taken as CPU time over several minutes. Some figur
 | Refresh still image | Sets a fresh lock-screen image immediately. |
 | Open at login | Starts Glowgraph with your Mac. |
 | About Glowgraph | Version and licence. |
+| Quit Glowgraph | Closes the app. |
 
 ## How the graph is built
 
-- **Links** are counted the way Obsidian counts them: `[[Note]]`, `[[Folder/Note]]`, `[[Note|alias]]`, `[[Note#heading]]` and Markdown links such as `[text](Note.md)` or `[text](../Folder/My%20Note.md)`, relative to the note or from the vault root. Web addresses and links inside code blocks are ignored.
+- **Links** are counted the way Obsidian counts them: both [[wikilinks]] (with folders, aliases and headings) and standard Markdown links to your notes. Links to websites and links inside code blocks are ignored.
 - **Hidden folders** such as `.obsidian`, `.trash` and `.git` are skipped.
 - **Brightness and size** come from a note's length, on a log scale between the 10th and 95th percentile of your vault.
 - **The layout** is a small force simulation (repulsion, springs and a pull to the centre), computed once and then remembered.
