@@ -44,13 +44,21 @@ final class LaterneMetal: NSObject, MTKViewDelegate {
     // Zustand
     private struct Knoten { var id: String; var b: SIMD3<Double>; var r: Double; var ph: Double; var farbe: SIMD3<Float>; var form: Float
         var nb: [Int] = []; var feuer: Double = 0; var p = SIMD4<Double>()
-        var neuAb: Double = -1; var neuGross: Double = 0; var gruppe = ""; var inhalt: Double = 0.5 }   // sanftes Aufleuchten neuer Notizen (Zeitpunkt in s, Stärke)   // p: x, y, s, z (Projektion)
-    private struct Kante { var a: Int; var b: Int; var seite: Float; var feuer: Double = 0 }
+        var neuAb: Double = -1; var neuGross: Double = 0; var gruppe = ""; var inhalt: Double = 0.5
+        // Weicher Übergang bei Änderungen am Vault: b und r sind die gerade gezeichneten Werte, gleiten von „von“ zu „ziel“
+        var vonB = SIMD3<Double>(), zielB = SIMD3<Double>(), vonR: Double = 0, zielR: Double = 0 }   // sanftes Aufleuchten neuer Notizen (Zeitpunkt in s, Stärke)   // p: x, y, s, z (Projektion)
+    private struct Kante { var a: Int; var b: Int; var seite: Float; var feuer: Double = 0; var neu = false }
     private struct Puls { var von: Int; var nach: Int; var l: Int; var t: Double; var v: Double; var hell: Double }
     private struct Kaskade { var front: [Int]; var besucht: Set<Int>; var tiefe: Int; var warte: Double }
     private var knoten: [Knoten] = [], kanten: [Kante] = [], kanteVon: [Int: Int] = [:]
     private var pulse: [Puls] = [], kaskaden: [Kaskade] = [], verzoegert: [(Double, Int, Double)] = []
     private var radius: Double = 300, massstab: Double = 1, naechsteKaskade: Double = 2500
+    /// Übergang nach einer Änderung: Mitte und Maßstab der Skulptur ändern sich mit jeder Notiz – statt zu springen,
+    /// gleiten alle Punkte in 2,4 s an ihren neuen Platz, neue Notizen wachsen aus dem Nichts.
+    private var massstabVon: Double = 1, massstabZiel: Double = 1, uebergangAb: Double = -100
+    static let uebergangDauer = 2.4
+    private func uebergang(_ jetztS: Double) -> Double {
+        let u = min(1, max(0, (jetztS - uebergangAb) / Self.uebergangDauer)); return u * u * u * (u * (u * 6 - 15) + 10) }
     private var sterne: [(SIMD3<Double>, Float, Float, Float)] = []
     private var zufall = SystemRandomNumberGenerator()
     // Puffer für die Instanzen, dreifach (die GPU darf noch am vorigen Bild lesen)
@@ -121,11 +129,18 @@ final class LaterneMetal: NSObject, MTKViewDelegate {
     // MARK: Daten
     func setze(_ s: Szene) {
         let alt = Dictionary(knoten.map { ($0.id, ($0.feuer, $0.neuAb, $0.neuGross)) }, uniquingKeysWith: { a, _ in a })
+        let altLage = Dictionary(knoten.map { ($0.id, ($0.b, $0.r)) }, uniquingKeysWith: { a, _ in a })   // gerade gezeichnet
         let warSchon = !knoten.isEmpty
+        let altIds = knoten.map(\.id)
+        func schluessel(_ a: Int, _ b: Int) -> String { let x = altIds[a], y = altIds[b]; return x < y ? x + "|" + y : y + "|" + x }
+        let altPaare = Set(kanten.map { schluessel($0.a, $0.b) })
+        let altKantenFeuer = Dictionary(kanten.map { (schluessel($0.a, $0.b), $0.feuer) }, uniquingKeysWith: { a, _ in a })
+        let altPulse = pulse.map { (altIds[$0.von], altIds[$0.nach], $0.t, $0.v, $0.hell) }
         let alteGruppen = Set(knoten.map(\.gruppe))
         let jetztS = CACurrentMediaTime() - start
         var neuZaehler = 0
-        massstab = Double(s.massstab); radius = 300
+        massstabVon = warSchon ? massstab : Double(s.massstab); massstabZiel = Double(s.massstab); massstab = massstabVon; radius = 300
+        uebergangAb = warSchon ? jetztS : -100
         var nbZahl = Array(repeating: 0, count: s.punkte.count)
         for (a, b) in s.links { nbZahl[a] += 1; nbZahl[b] += 1 }
         knoten = s.punkte.enumerated().map { i, p in
@@ -133,6 +148,11 @@ final class LaterneMetal: NSObject, MTKViewDelegate {
             var k = Knoten(id: p.id, b: SIMD3(Double(p.p.x), Double(p.p.y), Double(p.p.z)), r: rOrig * massstab, ph: Double(p.ph),
                            farbe: Self.farbe(p.g) / 255, form: 0)
             k.gruppe = p.g; k.inhalt = Double(p.inhalt)
+            k.zielB = k.b; k.zielR = rOrig * Double(s.massstab)
+            if let l = altLage[p.id] { k.vonB = l.0; k.vonR = l.1 }        // bekannte Notiz: gleitet von dort, wo sie gerade ist
+            else if warSchon { k.vonB = k.zielB; k.vonR = 0 }              // neue Notiz: wächst an ihrem Platz
+            else { k.vonB = k.zielB; k.vonR = k.zielR }                     // erster Start: sofort da
+            k.b = k.vonB; k.r = k.vonR
             if let a = alt[p.id] { k.feuer = a.0; k.neuAb = a.1; k.neuGross = a.2 }
             else if warSchon {
                 // neue Notiz: sanft aufleuchten, mehrere nacheinander (je 0,7 s versetzt); neuer Ordner etwas größer
@@ -141,10 +161,26 @@ final class LaterneMetal: NSObject, MTKViewDelegate {
             }
             return k
         }
-        kanten = s.links.enumerated().map { k, l in Kante(a: l.0, b: l.1, seite: k % 2 == 1 ? 1 : -1) }
+        // Bogenseite fest je Notizpaar (nicht nach der Reihenfolge der Links): sonst klappen bei jeder Änderung Bögen um
+        func paarSchluessel(_ a: String, _ b: String) -> String { a < b ? a + "|" + b : b + "|" + a }
+        kanten = s.links.map { l in
+            let ia = s.punkte[l.0].id, ib = s.punkte[l.1].id
+            var z = Zufall(paarSchluessel(ia, ib) + "#bogen")
+            let seite: Float = (z.next() < 0.5 ? 1 : -1) * (ia < ib ? 1 : -1)
+            var k = Kante(a: l.0, b: l.1, seite: seite)
+            k.feuer = altKantenFeuer[paarSchluessel(ia, ib)] ?? 0
+            k.neu = warSchon && !altPaare.contains(paarSchluessel(ia, ib))
+            return k
+        }
         kanteVon = [:]
         for (k, l) in kanten.enumerated() { knoten[l.a].nb.append(l.b); knoten[l.b].nb.append(l.a); kanteVon[l.a * 100_000 + l.b] = k; kanteVon[l.b * 100_000 + l.a] = k }
-        pulse = []; kaskaden = []; verzoegert = []
+        // laufende Funken über die Notiz-Namen auf die neuen Nummern umhängen, statt sie verschwinden zu lassen
+        let neuIndex = Dictionary(knoten.enumerated().map { ($1.id, $0) }, uniquingKeysWith: { a, _ in a })
+        pulse = altPulse.compactMap { p in
+            guard let v = neuIndex[p.0], let n = neuIndex[p.1], let l = kanteVon[v * 100_000 + n] else { return nil }
+            return Puls(von: v, nach: n, l: l, t: p.2, v: p.3, hell: p.4)
+        }
+        kaskaden = []; verzoegert = []
         if sterne.isEmpty {
             var z = Zufall("vault-graph")
             sterne = (0..<180).map { _ in
@@ -231,6 +267,12 @@ final class LaterneMetal: NSObject, MTKViewDelegate {
         rotY = 0.6 + z * 0.00003; rotX = -0.2 + sin(z * 0.00006) * 0.08; atmen = 1 + sin(z * 0.00011) * 0.02
         zoom = W / H > 1.4 ? 1.38 : 1.15
         schritt(dt, laufzeit * 1000)
+        let u = uebergang(laufzeit)
+        massstab = massstabVon + (massstabZiel - massstabVon) * u
+        for i in knoten.indices {
+            knoten[i].b = knoten[i].vonB + (knoten[i].zielB - knoten[i].vonB) * u
+            knoten[i].r = knoten[i].vonR + (knoten[i].zielR - knoten[i].vonR) * u
+        }
         let wackel = 1.2 * massstab
         for i in knoten.indices {
             let w = z * 0.0004 + knoten[i].ph, b = knoten[i].b
@@ -289,7 +331,8 @@ final class LaterneMetal: NSObject, MTKViewDelegate {
         var linien: [LinieI] = []; linien.reserveCapacity(kanten.count + 32)
         for l in kanten {
             let a = knoten[l.a].p, b = knoten[l.b].p
-            linien.append(LinieI(ab: SIMD4(Float(a.x), Float(a.y), Float(b.x), Float(b.y)), p: SIMD4(l.seite, 0.7, 0.16, 0), farbe: SIMD4(Self.messing / 255, 1)))
+            let deck = Float(l.neu ? 0.16 * u : 0.16)   // neue Verbindungen blenden mit dem Übergang ein
+            linien.append(LinieI(ab: SIMD4(Float(a.x), Float(a.y), Float(b.x), Float(b.y)), p: SIMD4(l.seite, 0.7, deck, 0), farbe: SIMD4(Self.messing / 255, 1)))
         }
         for l in kanten where l.feuer * 0.45 >= 0.02 {
             let a = knoten[l.a].p, b = knoten[l.b].p

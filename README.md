@@ -44,6 +44,7 @@ Glowgraph draws directly with Apple's Metal at a calm 30 frames per second. It s
 - **New notes glow up**: a fresh note lights up softly and settles in. Several new notes take turns, and a brand-new folder glows a little brighter.
 - **Brightness by content**: longer notes shine a bit brighter and larger. The range is capped, so one giant note never outshines everything else.
 - **Stable layout**: each note keeps its place between restarts, so your sculpture stays recognisable. A note that gets its first link finds its spot in the web.
+- **Smooth changes**: when notes come or go, the sculpture doesn't jump. Everything glides to its new place over a couple of seconds, new notes grow in, and new links fade in.
 - **Lonely notes stay visible**: notes without any links form a loose ring around the sculpture.
 - **Colour by folder**: each top-level folder gets its own calm colour from a fixed palette.
 
@@ -170,6 +171,7 @@ Glowgraph is an independent project. It is not affiliated with or endorsed by Ob
 
 **Was es kann:**
 - Neue Notizen erscheinen live und leuchten kurz sanft auf.
+- Ändert sich der Vault, springt nichts: Die Skulptur gleitet in Ruhe an ihre neue Form.
 - Längere Notizen leuchten etwas heller, aber begrenzt.
 - Es weicht Menüleiste und Dock aus und gleitet langsam hinterher, wenn das Dock den Bildschirm wechselt.
 - Jeder Bildschirm bekommt eine eigene Ansicht.
